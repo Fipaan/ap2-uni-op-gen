@@ -14,13 +14,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Generator Repo
-        uses: actions/checkout@v3
+      - name: Checkout Gen Repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.23
+          go-version: "1.25.5"
 
       - name: Install Protobuf Compiler
         run: |
@@ -31,22 +33,21 @@ jobs:
         run: |
           go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.33.0
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-          echo "GOPATH bin: $(go env GOPATH)/bin"
-          export PATH="$PATH:$(go env GOPATH)/bin"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Clone Proto Files Repository
+      - name: Clone Source Repo
         run: |
-          git clone https://github.com/Fipaan/ap2-proto.git proto-src
+          git clone https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/fipaan/ap2-uni.git source-repo
 
       - name: Generate Go Code from Proto Files
         run: |
-          cd proto-src
+          cd source-repo
 
           echo "Cleaning up old generated files..."
           find . -name "*.pb.go" -delete
 
           echo "Generating .pb.go and _grpc.pb.go files..."
-          find . -name "*.proto" -print0 | xargs -0 -n1 protoc -I. --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:.
+          find op-assign -name "*.proto" -print0 | xargs -0 -n1 protoc -I. --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:.
 
           echo "Generated files:"
           find . -name "*.pb.go"
@@ -56,33 +57,30 @@ jobs:
             exit 1
           fi
 
-      - name: Push Generated Code to Gen Repo
-        env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      - name: Sync Generated Code into Gen Repo
         run: |
-          git clone https://github.com/Fipaan/ap2-proto-gen.git ap2-proto-gen
+          cd source-repo
 
-          # Copy all generated .pb.go files preserving folder structure
-          cd proto-src
-          find . -name "*.pb.go" | while read file; do
-            target="../ap2-proto-gen/$(dirname "$file")"
+          find . -name "*.pb.go" | while read -r file; do
+            target="../$(dirname "$file")"
             mkdir -p "$target"
             cp "$file" "$target/"
           done
 
-          cd ../ap2-proto-gen
-
-          git config --global user.name "Fipaan"
-          git config --global user.email "fipaan@proton.me"
+      - name: Commit and Push Changes
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          git config user.name "Fipaan"
+          git config user.email "fipaan@proton.me"
 
           git add .
 
           if git diff --cached --quiet; then
-            echo "No changes to commit. Skipping commit and push."
-          else
-            git commit -m "Rege4nerate proto Go files"
-            NEW_TAG="v0.0.$(date +%s)"
-            git tag "$NEW_TAG"
-            git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/Fipaan/ap2-proto-gen.git
-            git push origin main --follow-tags
+            echo "No changes to commit."
+            exit 0
           fi
+
+          git commit -m "Regenerate protobuf Go files"
+          git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/fipaan/ap2-uni-op-gen.git
+          git push origin main

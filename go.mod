@@ -1,4 +1,4 @@
-module github.com/fipaan/ap2-uni-op-gen
+module github.com/Fipaan/ap2-uni-op-gen
 
 go 1.25.5
 

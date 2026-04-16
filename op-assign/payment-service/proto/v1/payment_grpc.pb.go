@@ -28,7 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PaymentServiceClient interface {
 	ProcessPayment(ctx context.Context, in *PaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error)
-	ListPayments(ctx context.Context, in *ListPaymentsRequest, opts ...grpc.CallOption) (*PaymentResponse, error)
+	ListPayments(ctx context.Context, in *ListPaymentsRequest, opts ...grpc.CallOption) (*ListPaymentsResponse, error)
 }
 
 type paymentServiceClient struct {
@@ -48,8 +48,8 @@ func (c *paymentServiceClient) ProcessPayment(ctx context.Context, in *PaymentRe
 	return out, nil
 }
 
-func (c *paymentServiceClient) ListPayments(ctx context.Context, in *ListPaymentsRequest, opts ...grpc.CallOption) (*PaymentResponse, error) {
-	out := new(PaymentResponse)
+func (c *paymentServiceClient) ListPayments(ctx context.Context, in *ListPaymentsRequest, opts ...grpc.CallOption) (*ListPaymentsResponse, error) {
+	out := new(ListPaymentsResponse)
 	err := c.cc.Invoke(ctx, PaymentService_ListPayments_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (c *paymentServiceClient) ListPayments(ctx context.Context, in *ListPayment
 // for forward compatibility
 type PaymentServiceServer interface {
 	ProcessPayment(context.Context, *PaymentRequest) (*PaymentResponse, error)
-	ListPayments(context.Context, *ListPaymentsRequest) (*PaymentResponse, error)
+	ListPayments(context.Context, *ListPaymentsRequest) (*ListPaymentsResponse, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -73,7 +73,7 @@ type UnimplementedPaymentServiceServer struct {
 func (UnimplementedPaymentServiceServer) ProcessPayment(context.Context, *PaymentRequest) (*PaymentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessPayment not implemented")
 }
-func (UnimplementedPaymentServiceServer) ListPayments(context.Context, *ListPaymentsRequest) (*PaymentResponse, error) {
+func (UnimplementedPaymentServiceServer) ListPayments(context.Context, *ListPaymentsRequest) (*ListPaymentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPayments not implemented")
 }
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
